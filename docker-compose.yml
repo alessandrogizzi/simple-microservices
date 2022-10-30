@@ -14,6 +14,23 @@ services:
       - /usr/src/app/node_modules
     ports:
       - '3000:3000'
+  posts:
+    build:
+      context: .
+      dockerfile: ./apps/posts/Dockerfile
+      target: development
+    command: npm run start:dev posts
+    env_file:
+      - ./apps/posts/.env
+    depends_on:
+      - mongodb-categories
+      - mongodb-posts
+      - categories
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - '3001:3001'
   mongodb-categories:
     image: docker.io/bitnami/mongodb:5.0
     environment:
@@ -24,6 +41,16 @@ services:
       - 'mongodb_categories_data:/bitnami/mongodb'
     ports:
       - '27017:27017'
+  mongodb-posts:
+    image: docker.io/bitnami/mongodb:5.0
+    environment:
+      - MONGODB_ADVERTISED_HOSTNAME=mongodb-posts
+      - MONGODB_ROOT_PASSWORD=password123
+      - MONGODB_DATABASE=posts
+    depends_on:
+      - mongodb-categories
+    ports:
+      - '27018:27017'
 
 volumes:
   mongodb_categories_data:
