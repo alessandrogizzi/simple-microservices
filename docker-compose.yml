@@ -1,0 +1,30 @@
+services:
+  categories:
+    build:
+      context: .
+      dockerfile: ./apps/categories/Dockerfile
+      target: development
+    command: npm run start:dev categories
+    env_file:
+      - ./apps/categories/.env
+    depends_on:
+      - mongodb-categories
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - '3000:3000'
+  mongodb-categories:
+    image: docker.io/bitnami/mongodb:5.0
+    environment:
+      - MONGODB_ADVERTISED_HOSTNAME=mongodb-categories
+      - MONGODB_ROOT_PASSWORD=password123
+      - MONGODB_DATABASE=categories
+    volumes:
+      - 'mongodb_categories_data:/bitnami/mongodb'
+    ports:
+      - '27017:27017'
+
+volumes:
+  mongodb_categories_data:
+    driver: local
