@@ -1,14 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { PostsRepository } from './posts.repository';
+import { HttpService } from '@nestjs/axios';
+import { categoryError } from '@app/common';
 import { CreatePostRequest } from './dto/create-post-request';
 import { UpdatePostRequest } from './dto/update-post-request';
 
 @Injectable()
 export class PostsService {
-  constructor(private readonly postsRepository: PostsRepository) {}
+  constructor(
+    private readonly postsRepository: PostsRepository,
+    private readonly httpService: HttpService,
+  ) {}
 
   async createPost(request: CreatePostRequest) {
     try {
+      await this.httpService.axiosRef
+        .get(`${process.env.CATEGORIES_URL}/${request.category}`)
+        .catch(() => {
+          throw categoryError();
+        });
+
       return await this.postsRepository.create(request);
     } catch (err) {
       throw err;
@@ -33,6 +44,13 @@ export class PostsService {
 
   async updatePost(id: string, request: UpdatePostRequest) {
     try {
+      request?.category &&
+        (await this.httpService.axiosRef
+          .get(`${process.env.CATEGORIES_URL}/${request.category}`)
+          .catch(() => {
+            throw categoryError();
+          }));
+
       return await this.postsRepository.findOneAndUpdate(
         {
           _id: id,
