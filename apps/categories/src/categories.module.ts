@@ -7,6 +7,7 @@ import { CategoriesController } from './categories.controller';
 import { CategoriesService } from './categories.service';
 import { Category, CategorySchema } from './schemas/category.schema';
 import { CategoriesRepository } from './categories.repository';
+import { RmqModule } from '@app/common';
 
 @Module({
   imports: [
@@ -15,6 +16,8 @@ import { CategoriesRepository } from './categories.repository';
       validationSchema: Joi.object({
         MONGODB_URI: Joi.string().required(),
         PORT: Joi.number().required(),
+        RABBIT_MQ_URI: Joi.string().required(),
+        RABBIT_MQ_CATEGORIES_QUEUE: Joi.string().required(),
       }),
       envFilePath: './apps/categories/.env',
     }),
@@ -22,6 +25,7 @@ import { CategoriesRepository } from './categories.repository';
     MongooseModule.forFeature([
       { name: Category.name, schema: CategorySchema },
     ]),
+    RmqModule,
   ],
   controllers: [CategoriesController],
   providers: [CategoriesService, CategoriesRepository],

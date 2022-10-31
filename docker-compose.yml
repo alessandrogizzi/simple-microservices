@@ -9,6 +9,7 @@ services:
       - ./apps/categories/.env
     depends_on:
       - mongodb-categories
+      - rabbitmq
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
@@ -25,6 +26,7 @@ services:
     depends_on:
       - mongodb-categories
       - mongodb-posts
+      - rabbitmq
       - categories
     volumes:
       - .:/usr/src/app
@@ -42,12 +44,17 @@ services:
     depends_on:
       - mongodb-categories
       - mongodb-products
+      - rabbitmq
       - categories
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
     ports:
       - '3002:3002'
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - '5672:5672'
   mongodb-categories:
     image: docker.io/bitnami/mongodb:5.0
     environment:

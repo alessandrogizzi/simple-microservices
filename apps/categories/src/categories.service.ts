@@ -1,3 +1,4 @@
+import { addOrSubtract } from '@app/common';
 import { HttpException, Injectable } from '@nestjs/common';
 import { CategoriesRepository } from './categories.repository';
 import { CreateCategoryRequest } from './dto/create-category-request';
@@ -43,6 +44,30 @@ export class CategoriesService {
         },
         request,
       );
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  async counter(
+    id: string,
+    typeCounter: 'post' | 'product',
+    typeOperator: '+' | '-',
+  ) {
+    try {
+      const category = await this.categoriesRepository.findOne({
+        _id: id,
+      });
+
+      return typeCounter === 'post'
+        ? await this.updateCategory(id, {
+            ...category,
+            postCount: addOrSubtract(category.postCount, 1, typeOperator),
+          })
+        : await this.updateCategory(id, {
+            ...category,
+            productCount: addOrSubtract(category.productCount, 1, typeOperator),
+          });
     } catch (err) {
       throw err;
     }

@@ -1,25 +1,33 @@
-import { Injectable } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { Injectable, Inject } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { categoryError } from '@app/common';
 import { ProductsRepository } from './products.repository';
 import { CreateProductRequest } from './dto/create-product-request';
 import { UpdateProductRequest } from './dto/update-product-request';
+import { CATEGORIES_SERVICE } from './constants';
 
 @Injectable()
 export class ProductsService {
   constructor(
     private readonly productsRepository: ProductsRepository,
     private readonly httpService: HttpService,
+    @Inject(CATEGORIES_SERVICE) private categoriesClient: ClientProxy,
   ) {}
 
-  async createPost(request: CreateProductRequest) {
+  async createProduct(request: CreateProductRequest) {
     try {
       await this.httpService.axiosRef
         .get(`${process.env.CATEGORIES_URL}/${request.category}`)
         .catch(() => {
           throw categoryError();
         });
-      return await this.productsRepository.create(request);
+      const product = await this.productsRepository.create(request);
+
+      await this.categoriesClient.emit('product_created', {
+        ...product,
+      });
+      return product;
     } catch (err) {
       throw err;
     }
@@ -63,7 +71,12 @@ export class ProductsService {
 
   async deleteProduct(id: string) {
     try {
-      return await this.productsRepository.delete({ _id: id });
+      const product = await this.productsRepository.findOne({ _id: id });
+      const res = await this.productsRepository.delete({ _id: id });
+      await this.categoriesClient.emit('product_removed', {
+        category: product.category,
+      });
+      return res;
     } catch (err) {
       throw err;
     }

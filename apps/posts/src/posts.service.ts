@@ -1,7 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { Injectable, Inject } from '@nestjs/common';
 import { PostsRepository } from './posts.repository';
 import { HttpService } from '@nestjs/axios';
 import { categoryError } from '@app/common';
+import { CATEGORIES_SERVICE } from './constants';
 import { CreatePostRequest } from './dto/create-post-request';
 import { UpdatePostRequest } from './dto/update-post-request';
 
@@ -10,6 +12,7 @@ export class PostsService {
   constructor(
     private readonly postsRepository: PostsRepository,
     private readonly httpService: HttpService,
+    @Inject(CATEGORIES_SERVICE) private categoriesClient: ClientProxy,
   ) {}
 
   async createPost(request: CreatePostRequest) {
@@ -20,7 +23,11 @@ export class PostsService {
           throw categoryError();
         });
 
-      return await this.postsRepository.create(request);
+      const post = await this.postsRepository.create(request);
+      await this.categoriesClient.emit('post_created', {
+        ...post,
+      });
+      return post;
     } catch (err) {
       throw err;
     }
@@ -64,7 +71,12 @@ export class PostsService {
 
   async deletePost(id: string) {
     try {
-      return await this.postsRepository.delete({ _id: id });
+      const post = await this.postsRepository.findOne({ _id: id });
+      const res = await this.postsRepository.delete({ _id: id });
+      await this.categoriesClient.emit('post_removed', {
+        category: post.category,
+      });
+      return res;
     } catch (err) {
       throw err;
     }
